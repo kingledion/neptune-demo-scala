@@ -29,7 +29,7 @@ object Main extends App {
       .to(g.V("a116af67-d0a2-45b6-a726-dc17a7d5efb4"))
       .next()
   } catch {
-    case e: org.apache.tinkerpop.gremlin.driver.exception.ResponseException => println("Could not insert!")
+    case e: java.util.concurrent.CompletionException => println("Caught java exception")
   }
 
   // find all stores my user shopped at
@@ -37,7 +37,7 @@ object Main extends App {
     .out("order_at")
     .values("dba")
 
-  t map (println(_))
+  t forEachRemaining println
 
   println("did some work")
 
