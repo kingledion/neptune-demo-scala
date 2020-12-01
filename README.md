@@ -10,4 +10,11 @@
 
 `sudo yum install git`
 
+Clone this repo with git
+
+### How to run
+
+To run REPL: 
+`sbt run` (will take a while to get maven artifacts)
+
 
