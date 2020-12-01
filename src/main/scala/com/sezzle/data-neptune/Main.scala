@@ -1,48 +1,43 @@
 package com.sezzle.dataneptune
 
-import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.{GraphTraversal, GraphTraversalSource}
-import org.apache.tinkerpop.gremlin.process.traversal.AnonymousTraversalSource.traversal
-import org.apache.tinkerpop.gremlin.driver.remote.DriverRemoteConnection
-import org.apache.tinkerpop.gremlin.structure.T
+import cats.effect.IO
+import cats.effect.concurrent.Ref
+import com.twitter.finagle.Http
+import com.twitter.server.TwitterServer
+import com.twitter.util.Await
 
-object Main extends App {
-  println("Started main!")
+object Main extends TwitterServer {
 
-  var conn : Connection = Connection()
+  private val port: Int = 8081
 
-  println("made a connection")
+  def main(): Unit = {
 
-  var g : GraphTraversalSource = traversal().withRemote(DriverRemoteConnection.using(conn.getCluster()));
+    val conn : Connection = Connection()
 
-  try {
-    g.addV("Shopper")
-      .property(T.id, "8315ef05-b180-4a6a-8e48-3e228dda52cd")
-      .property("firstname", "Daniel")
-      .property("lastname", "Hartig")
-      .next()
-    g.addV("Merchant")
-      .property(T.id, "a116af67-d0a2-45b6-a726-dc17a7d5efb4")
-      .property("dba", "A Quiver Full")
-      .next()
-    g.addE("order_at")
-      .from(g.V("8315ef05-b180-4a6a-8e48-3e228dda52cd"))
-      .to(g.V("a116af67-d0a2-45b6-a726-dc17a7d5efb4"))
-      .next()
-  } catch {
-    case e: java.util.concurrent.CompletionException => println("Caught java exception")
+    val app = new App(conn)
+    val server = Http.server.serve(":${port}", app.toService)
+
+    onExit(conn.close())
+    Await.ready(server)
   }
 
-  // find all stores my user shopped at
-  var t = g.V("8315ef05-b180-4a6a-8e48-3e228dda52cd")
-    .out("order_at")
-    .values("dba")
-
-  t forEachRemaining println
-
-  println("did some work")
-
-  conn.close()
-
-  println("closed!")
-
 }
+
+
+// try {
+//   g.addV("Shopper")
+//     .property(T.id, "8315ef05-b180-4a6a-8e48-3e228dda52cd")
+//     .property("firstname", "Daniel")
+//     .property("lastname", "Hartig")
+//     .next()
+//   g.addV("Merchant")
+//     .property(T.id, "a116af67-d0a2-45b6-a726-dc17a7d5efb4")
+//     .property("dba", "A Quiver Full")
+//     .next()
+//   g.addE("order_at")
+//     .from(g.V("8315ef05-b180-4a6a-8e48-3e228dda52cd"))
+//     .to(g.V("a116af67-d0a2-45b6-a726-dc17a7d5efb4"))
+//     .next()
+// } catch {
+//   case e: java.util.concurrent.CompletionException => println("Caught java exception")
+// }
