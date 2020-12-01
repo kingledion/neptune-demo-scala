@@ -14,19 +14,23 @@ object Main extends App {
 
   var g : GraphTraversalSource = traversal().withRemote(DriverRemoteConnection.using(conn.getCluster()));
 
-  g.addV("Shopper")
-    .property(T.id, "8315ef05-b180-4a6a-8e48-3e228dda52cd")
-    .property("firstname", "Daniel")
-    .property("lastname", "Hartig")
-    .next()
-  g.addV("Merchant")
-    .property(T.id, "a116af67-d0a2-45b6-a726-dc17a7d5efb4")
-    .property("dba", "A Quiver Full")
-    .next()
-  g.addE("order_at")
-    .from(g.V("8315ef05-b180-4a6a-8e48-3e228dda52cd"))
-    .to(g.V("a116af67-d0a2-45b6-a726-dc17a7d5efb4"))
-    .next()
+  try {
+    g.addV("Shopper")
+      .property(T.id, "8315ef05-b180-4a6a-8e48-3e228dda52cd")
+      .property("firstname", "Daniel")
+      .property("lastname", "Hartig")
+      .next()
+    g.addV("Merchant")
+      .property(T.id, "a116af67-d0a2-45b6-a726-dc17a7d5efb4")
+      .property("dba", "A Quiver Full")
+      .next()
+    g.addE("order_at")
+      .from(g.V("8315ef05-b180-4a6a-8e48-3e228dda52cd"))
+      .to(g.V("a116af67-d0a2-45b6-a726-dc17a7d5efb4"))
+      .next()
+  } catch {
+    case e: org.apache.tinkerpop.gremlin.driver.exception.ResponseException => println("Could not insert!")
+  }
 
   // find all stores my user shopped at
   var t = g.V("8315ef05-b180-4a6a-8e48-3e228dda52cd")
