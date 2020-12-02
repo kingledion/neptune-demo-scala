@@ -1,5 +1,7 @@
 package com.sezzle.dataneptune
 
+import scala.collection.mutable.ListBuffer
+
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.{GraphTraversal, GraphTraversalSource}
 import org.apache.tinkerpop.gremlin.process.traversal.AnonymousTraversalSource.traversal
 import org.apache.tinkerpop.gremlin.driver.remote.DriverRemoteConnection
@@ -15,8 +17,8 @@ import io.finch.circe._
 
 class App(conn : Connection) extends Endpoint.Module[IO] {
 
-  private val addpath = "/order"
-  private val getpath = "/recommend"
+  private val addpath = "order"
+  private val getpath = "recommend"
 
   // set up connection with Neptune
   var g : GraphTraversalSource = traversal().withRemote(DriverRemoteConnection.using(conn.getCluster()));
@@ -24,8 +26,12 @@ class App(conn : Connection) extends Endpoint.Module[IO] {
 
   final val addOrder: Endpoint[IO, Unit] = post(addpath :: jsonBody[Order]) { order: Order =>
 
+    println("Mapped the order")
+
     // validate
     order.validate
+
+    println("Validated the order")
 
     // insert
 
@@ -46,16 +52,40 @@ class App(conn : Connection) extends Endpoint.Module[IO] {
       .property("amount_in_cents", order.amount_in_cents)
       .next()
 
+      println("called the gremlin and returning")
+
       //case e: java.util.concurrent.CompletionException => println("Caught java exception")
 
-      Ok()
-    } handle {
-      case e: OrderValidationException => BadRequest(e)
+    Ok()
+  } handle {
+    case e: OrderValidationException => BadRequest(e)
+  }
+
+  final val getRecommendations: Endpoint[IO, List[String]] = get(getpath :: path[String]) { id: String =>
+
+    println(s"Shopper id is $id")
+
+    var t = g.V(id)
+      .out("order_at")
+      .values("dba")
+
+    println("Did some gremlin")
+
+    val returnBuffer = new ListBuffer[String]
+    t.forEachRemaining{ s: String =>
+      returnBuffer += s
     }
+
+    println("Got a return value")
+
+    Ok(returnBuffer.toList)
+  } handle {
+    case e: java.lang.IllegalStateException => BadRequest(e)
+  }
 
 
   final def toService: Service[Request, Response] = Bootstrap
-    .serve[Application.Json](addOrder)
+    .serve[Application.Json](addOrder :+: getRecommendations)
     .toService
 
 }

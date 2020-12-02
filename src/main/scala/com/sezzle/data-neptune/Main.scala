@@ -15,7 +15,7 @@ object Main extends TwitterServer {
     val conn : Connection = Connection()
 
     val app = new App(conn)
-    val server = Http.server.serve(":${port}", app.toService)
+    val server = Http.server.serve(s":$port", app.toService)
 
     onExit(conn.close())
     Await.ready(server)
